@@ -8,12 +8,14 @@
   ;; TODO consider alternate hierarchy
   )
 
-(defmacro cond
+(def ^:private cond-base-docstring
   "clause => lhs rhs
 
   For each lhs, determine how to evaluate rhs, whether to process the
-  rest of the clauses, etc."
-  ;; Note that this docstring is augmented by invocations of
+  rest of the clauses, etc.")
+
+(defmacro ^{:doc cond-base-docstring} cond
+  ;; Note that `cond`'s docstring is augmented by invocations of
   ;; `defclause`.
   [& clauses]
   ;; TODO either handle implicit else or enforce even number of forms.
@@ -22,11 +24,38 @@
        reverse
        (reduce (fn [child [k rhs]] (clause k rhs child)) nil)))
 
+(defonce ^:private dispatch-docstrings (agent {:dispatch->docstring {}
+                                               :order []}))
+
 (defmacro defclause
   [dispatch docstring [lhs rhs child] & body]
-  (alter-meta! #'cond
-               (fn [{:keys [doc] :as meta}]
-                 (assoc meta :doc (format "%s\n\n%s - %s" doc dispatch docstring))))
+  ;; rebuild and set `#'cond`'s docstring. This is so that
+  ;; interactively re-evaluating `defclause`s is possible while
+  ;; `#'cond`'s docstring tells of all available clauses exactly once.
+  (await
+   (send-off
+    dispatch-docstrings
+    (fn [{:keys [order dispatch->docstring]
+          :as dispatch-docstrings}]
+      (let [{:keys [order dispatch->docstring]
+             :as dispatch-docstrings}
+            (if (contains? dispatch->docstring dispatch)
+              ;; XXX this does not properly handle updated
+              ;; docstrings. Consider using an ordered map.
+              dispatch-docstrings
+              (-> dispatch-docstrings
+                  (update :order conj dispatch)
+                  (assoc-in [:dispatch->docstring dispatch] docstring)))]
+        (alter-meta! #'cond
+                     assoc :doc
+                     (reduce (fn [docstring dispatch]
+                               (format "%s\n\n%s - %s"
+                                       docstring
+                                       dispatch
+                                       (dispatch->docstring dispatch)))
+                             cond-base-docstring
+                             order))
+        dispatch-docstrings))))
   `(defmethod clause ~dispatch [~lhs ~rhs ~child] ~@body))
 
 ;; TODO or should it be that non-keywords have this behavior? I think
@@ -34,6 +63,12 @@
 ;; value of lhs, then who am I to deny them? OTOH, pinning down the
 ;; non-keyword behavior would limit the possibility for different
 ;; extensions stepping on each others' toes.
+
+;; Also TODO: mistyping a keyword gives a confusing error message (or
+;; maybe even run-time unexpected behavior?). That's an argument in
+;; favor of making it so that a mistyped keyword gives "no
+;; implementation of method ::bogus" instead of current behavior which
+;; falls back to here.
 (defclause ::default
   "If lhs is logically true, yield rhs, else proceed with clauses."
   [lhs rhs child]
