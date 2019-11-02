@@ -33,6 +33,9 @@
 (defmethod clause ::do [_ rhs child]
   `(do ~rhs ~child))
 
+(defmethod clause ::let [_ bindings* child]
+  `(let ~bindings* ~child))
+
 (defmacro cond [& clauses]
   ;; TODO either handle implicit else or enforce even number of forms.
   (->> clauses
