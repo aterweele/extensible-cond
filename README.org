@@ -1,0 +1,24 @@
+#+TITLE: extensible-cond
+#+AUTHOR: Alex ter Weele
+* Inspiration
+  This library is just [[https://github.com/Engelberg/better-cond][Mark Engelberg's better-cond]] but extensible. It
+  also has some similarities to [[https://github.com/randomcorp/thread-first-thread-last-backwards-question-mark-as-arrow-cond-arrow-bang][Alex Engelberg and Derek Slager's
+  ~->->><?as->cond->!~]]. I was also inspired by [[https://github.com/rplevy/swiss-arrows#the-back-arrow][swiss-arrows' ~<<-~]] and
+  [[https://fare.livejournal.com/189741.html][François-René Rideau's ~nest~]] in that both seek to flatten Lisp that
+  marches "down and to the right" – deeply-nested forms that can be
+  hard to read.
+* License
+
+  Copyright © 2019 FIXME
+
+  This program and the accompanying materials are made available under
+  the terms of the Eclipse Public License 2.0 which is available at
+  http://www.eclipse.org/legal/epl-2.0.
+
+  This Source Code may also be made available under the following
+  Secondary Licenses when the conditions for such availability set
+  forth in the Eclipse Public License, v. 2.0 are satisfied: GNU
+  General Public License as published by the Free Software Foundation,
+  either version 2 of the License, or (at your option) any later
+  version, with the GNU Classpath Exception which is available at
+  https://www.gnu.org/software/classpath/license.html.
