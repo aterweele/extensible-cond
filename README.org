@@ -1,5 +1,23 @@
 #+TITLE: extensible-cond
 #+AUTHOR: Alex ter Weele
+* Usage
+  extensible-cond provides a ~cond~ macro which can be used much like
+  [[https://github.com/Engelberg/better-cond][Mark Engelberg's better-cond]]:
+  #+begin_src clojure
+    (require '[extensible-cond.core :as ex])
+
+    (ex/cond
+      (odd? a) 1
+      :ex/let [a (quot a 2)]
+      :ex/when-let [x (fn-which-may-return-falsey a),
+                    y (fn-which-may-return-falsey (* 2 a))]
+      :ex/when-some [b (fn-which-may-return-nil x),
+                     c (fn-which-may-return-nil y)]
+      :ex/when (seq x)
+      :ex/do (println x)
+      (odd? (+ x y)) 2
+      true 3)
+  #+end_src
 * Inspiration
   This library is just [[https://github.com/Engelberg/better-cond][Mark Engelberg's better-cond]] but extensible. It
   also has some similarities to [[https://github.com/randomcorp/thread-first-thread-last-backwards-question-mark-as-arrow-cond-arrow-bang][Alex Engelberg and Derek Slager's
