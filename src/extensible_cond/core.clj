@@ -24,38 +24,31 @@
        reverse
        (reduce (fn [child [k rhs]] (clause k rhs child)) nil)))
 
-(defonce ^:private dispatch-docstrings (agent {:dispatch->docstring {}
-                                               :order []}))
-
 (defmacro defclause
   [dispatch docstring [lhs rhs child] & body]
   ;; rebuild and set `#'cond`'s docstring. This is so that
   ;; interactively re-evaluating `defclause`s is possible while
   ;; `#'cond`'s docstring tells of all available clauses exactly once.
-  (await
-   (send-off
-    dispatch-docstrings
-    (fn [{:keys [order dispatch->docstring]
-          :as dispatch-docstrings}]
-      (let [{:keys [order dispatch->docstring]
-             :as dispatch-docstrings}
-            (if (contains? dispatch->docstring dispatch)
-              ;; XXX this does not properly handle updated
-              ;; docstrings. Consider using an ordered map.
-              dispatch-docstrings
-              (-> dispatch-docstrings
-                  (update :order conj dispatch)
-                  (assoc-in [:dispatch->docstring dispatch] docstring)))]
-        (alter-meta! #'cond
-                     assoc :doc
-                     (reduce (fn [docstring dispatch]
-                               (format "%s\n\n%s - %s"
-                                       docstring
-                                       dispatch
-                                       (dispatch->docstring dispatch)))
-                             cond-base-docstring
-                             order))
-        dispatch-docstrings))))
+  (alter-meta!
+   #'cond
+   (fn [{:as meta
+         :keys [doc]
+         ::keys [dispatch->docstring order]
+         :or {order []}}]
+     (let [order (if-not (contains? dispatch->docstring dispatch)
+                   (conj order dispatch)
+                   order)
+           dispatch->docstring (assoc dispatch->docstring dispatch docstring)]
+       (merge meta
+              {:doc (reduce (fn [docstring dispatch]
+                              (format "%s\n\n%s - %s"
+                                      docstring
+                                      dispatch
+                                      (dispatch->docstring dispatch)))
+                            cond-base-docstring
+                            order)
+               ::dispatch->docstring dispatch->docstring
+               ::order order}))))
   `(defmethod clause ~dispatch [~lhs ~rhs ~child] ~@body))
 
 ;; TODO or should it be that non-keywords have this behavior? I think
